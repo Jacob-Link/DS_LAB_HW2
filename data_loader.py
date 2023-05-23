@@ -17,7 +17,7 @@ def load_balanced_class_check():
     return counter_dict
 
 
-def print_counter(count_labels_dict):
+def print_counter(count_labels_dict, export=False):
     data = []
     total_labels = sum(count_labels_dict.values())
     for key, val in count_labels_dict.items():
@@ -26,9 +26,17 @@ def print_counter(count_labels_dict):
     data.sort(key=lambda x: x[1], reverse=True)
 
     print_df = pd.DataFrame(data, columns=["class", "count", "%"])
+    print("----------  label balance ----------")
     print(print_df)
+    print(f"Size of train dataset: {sum(print_df['count']):,}")
+    print("------------------------------------")
+    print()
+    if export:
+        print_df.to_csv("class_distribution.csv", index=False)
 
 
 if __name__ == '__main__':
     count_labels_dict = load_balanced_class_check()
     print_counter(count_labels_dict)
+
+
