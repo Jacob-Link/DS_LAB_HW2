@@ -1,3 +1,5 @@
+import random
+
 import torch
 import torchvision
 import numpy as np
@@ -8,6 +10,7 @@ from torchvision import datasets, models, transforms
 from torchvision.utils import save_image
 from torch.utils import data
 import secrets
+import random
 
 """
 rotate right
@@ -123,9 +126,35 @@ def save_images(save_path, dataset):
         # Save the transformed image
         save_image(img, f"{class_folder}/{secrets.token_hex(8)}.png")
 
-def sample_data(per_class=1000):
+
+def sample_data(images, per_class=1000, train_val_split=0.8):
     # use the filter code to create a count per class to know how much i can take max per label and the randomly sample data
-    pass
+
+    index_dict = dict()
+    for i, (_, class_index) in enumerate(images):
+        if class_index in index_dict:
+            index_dict[class_index].append(i)
+        else:
+            index_dict[class_index] = [i]
+
+    sampled_train_indices = []
+    sampled_val_indices = []
+
+    split_index = int(per_class * train_val_split)
+
+    for label in index_dict:
+        index_label_list = index_dict[label]
+        per_class_indices = random.sample(index_label_list, k=per_class)
+        random.shuffle(per_class_indices)
+
+        sampled_train_indices += per_class_indices[:split_index]
+        sampled_val_indices += per_class_indices[split_index:]
+
+    # print([(k, len(v)) for k, v in index_dict.items()])
+    sampled_train = torch.utils.data.Subset(images, sampled_train_indices)
+    sampled_val = torch.utils.data.Subset(images, sampled_val_indices)
+
+    return sampled_train, sampled_val
 
 
 if __name__ == '__main__':
@@ -133,49 +162,41 @@ if __name__ == '__main__':
     img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
 
     original_images = load_images(img_path_to_folders)
-    imshow(original_images[0][0])
-
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
-    imshow(random_erasing_images[0][0])
-
     random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders)
-    imshow(random_rotation_right_images[0][0])
-
     random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders)
-    imshow(random_rotation_left_images[0][0])
-
     random_gaussian_blur_images = load_images_gaussian_blur(img_path_to_folders)
-    imshow(random_gaussian_blur_images[0][0])
-
     random_vertical_flip_images = load_images_vertical_flip(img_path_to_folders)
-    imshow(random_vertical_flip_images[0][0])
-
     random_horizontal_flip_images = load_images_horizontal_flip(img_path_to_folders)
-    imshow(random_horizontal_flip_images[0][0])
+
+    # imshow(random_horizontal_flip_images[0][0])
+    # imshow(random_vertical_flip_images[0][0])
+    # imshow(random_gaussian_blur_images[0][0])
+    # imshow(random_rotation_left_images[0][0])
+    # imshow(random_rotation_right_images[0][0])
+    # imshow(random_erasing_images[0][0])
+    # imshow(original_images[0][0])
 
     # filter the labels which can be flipped vertically and horizontally
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
                                                         classes_to_keep=["i", "ii", "iii", "x"])
-
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
                                                           classes_to_keep=["i", "ii", "iii", "v", "x"])
-
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
-    print(len(original_images))
-    print(len(all_data))
+    train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
 
-    # point to clean data
-    # run the loading
-    # add the all together (simple + between datsets)
-    # print len by label
-    # sample
-    balanced_dataset = sample_data(per_class=1000)
-    # split train val
-    # write code to save
+    print(len(train_imgs))
+    print(len(val_imgs))
 
-    # save all images
-    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results", random_erasing_images)
-    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results", random_rotation_images)
+    # TODO: start from here!!!!
+    print([x for x in val_imgs]) # each item in list is a tup of tensor and class index in the original dataset from folder
+
+    # save all images -- in the train and val folders -- create new func, which can work with subset and concat dataset
+
+    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs)
+    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs)
+
+    # TODO: add prints at each step!!!
