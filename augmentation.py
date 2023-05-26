@@ -123,9 +123,15 @@ def save_images(save_path, dataset):
         # Save the transformed image
         save_image(img, f"{class_folder}/{secrets.token_hex(8)}.png")
 
+def sample_data(per_class=1000):
+    # use the filter code to create a count per class to know how much i can take max per label and the randomly sample data
+    pass
+
 
 if __name__ == '__main__':
-    img_path_to_folders = Path.cwd().parent / 'augmenting_test'
+    # img_path_to_folders = Path.cwd().parent / 'augmenting_test'
+    img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
+
     original_images = load_images(img_path_to_folders)
     imshow(original_images[0][0])
 
@@ -154,7 +160,21 @@ if __name__ == '__main__':
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
                                                           classes_to_keep=["i", "ii", "iii", "v", "x"])
 
-    # filter_flipped_horizontal(random_horizontal_flip_images)
+
+    all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
+               + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
+
+    print(len(original_images))
+    print(len(all_data))
+
+    # point to clean data
+    # run the loading
+    # add the all together (simple + between datsets)
+    # print len by label
+    # sample
+    balanced_dataset = sample_data(per_class=1000)
+    # split train val
+    # write code to save
 
     # save all images
     # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results", random_erasing_images)
