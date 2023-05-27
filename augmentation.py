@@ -11,6 +11,7 @@ from torchvision.utils import save_image
 from torch.utils import data
 import secrets
 import random
+import copy
 
 """
 rotate right
@@ -34,11 +35,9 @@ def imshow(inp, title=None):
 
 def load_images(img_path):
     """Loads and transforms the datasets."""
-    # Resize the samples and transform them into tensors
     data_transforms = transforms.Compose([transforms.Resize([64, 64]), transforms.ToTensor()])
-
-    # Create a pytorch dataset from a directory of images
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images from train folder...")
     return images
 
 
@@ -50,6 +49,7 @@ def load_images_with_erasing(img_path):
                                           ])  # with prob p erase a portion == scale, and fill with black (0) white(1)
 
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with random erasing...")
     return images
 
 
@@ -60,6 +60,7 @@ def load_images_with_rotation_right(img_path):
                                           transforms.RandomRotation(degrees=(15, 45), fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with random rotation to the right...")
     return images
 
 
@@ -70,6 +71,7 @@ def load_images_with_rotation_left(img_path):
                                           transforms.RandomRotation(degrees=(-45, -15), fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with random rotation to the left...")
     return images
 
 
@@ -80,6 +82,7 @@ def load_images_gaussian_blur(img_path):
                                           transforms.GaussianBlur(3)
                                           ])
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with gaussian blur...")
     return images
 
 
@@ -90,6 +93,7 @@ def load_images_horizontal_flip(img_path):
                                           transforms.RandomHorizontalFlip(p=1)
                                           ])
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with horizontal flip...")
     return images
 
 
@@ -100,6 +104,7 @@ def load_images_vertical_flip(img_path):
                                           transforms.RandomVerticalFlip(p=1)
                                           ])
     images = datasets.ImageFolder(img_path, data_transforms)
+    print(">>> loaded images with vertical flip...")
     return images
 
 
@@ -153,8 +158,27 @@ def sample_data(images, per_class=1000, train_val_split=0.8):
     # print([(k, len(v)) for k, v in index_dict.items()])
     sampled_train = torch.utils.data.Subset(images, sampled_train_indices)
     sampled_val = torch.utils.data.Subset(images, sampled_val_indices)
-
+    print(f">>> sampled {per_class} images per class, split train val with {train_val_split} ratio...")
     return sampled_train, sampled_val
+
+
+def create_image_folder_type(img_folder_type, subset_tensor_target_tup):
+    img_folder_type.samples = [x for x in subset_tensor_target_tup]
+    return img_folder_type
+
+
+def save_images_from_subset(folder_path, dataset, class_list):
+    os.makedirs(folder_path, exist_ok=True)
+
+    for img, target in dataset:
+        class_label = class_list[target]
+        class_folder = os.path.join(folder_path, class_label)
+        os.makedirs(class_folder, exist_ok=True)
+
+        # Save the transformed image
+        save_image(img, f"{class_folder}/{secrets.token_hex(8)}.png")
+
+    print(f">>> successfully saved {len(dataset)} images to: {folder_path}")
 
 
 if __name__ == '__main__':
@@ -188,15 +212,9 @@ if __name__ == '__main__':
 
     train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
 
-    print(len(train_imgs))
-    print(len(val_imgs))
+    # save all images -- in the train and val folders
+    save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
+                            original_images.classes)
 
-    # TODO: start from here!!!!
-    print([x for x in val_imgs]) # each item in list is a tup of tensor and class index in the original dataset from folder
-
-    # save all images -- in the train and val folders -- create new func, which can work with subset and concat dataset
-
-    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs)
-    # save_images(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs)
-
-    # TODO: add prints at each step!!!
+    save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs,
+                            original_images.classes)
