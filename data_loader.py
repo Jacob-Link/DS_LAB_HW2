@@ -4,9 +4,9 @@ import pandas as pd
 DATA_PATH = Path.cwd().parent / 'data' / 'hw2_094295' / 'data'
 
 
-def load_balanced_class_check():
+def load_balanced_class_check(path=DATA_PATH):
     # checking how many labels are in each class
-    train_path = DATA_PATH / 'train'
+    train_path = path / 'train'
 
     counter_dict = dict()
     for label_path in train_path.iterdir():
@@ -17,7 +17,7 @@ def load_balanced_class_check():
     return counter_dict
 
 
-def print_counter(count_labels_dict, export=False):
+def print_counter(count_labels_dict, title='', export=False):
     data = []
     total_labels = sum(count_labels_dict.values())
     for key, val in count_labels_dict.items():
@@ -32,7 +32,10 @@ def print_counter(count_labels_dict, export=False):
     print("------------------------------------")
     print()
     if export:
-        print_df.to_csv("class_distribution.csv", index=False)
+        if title != '':
+            print_df.to_csv(f"{title}.csv", index=False)
+        else:
+            print_df.to_csv("class_distribution.csv", index=False)
 
 
 def print_counter_post_manual_clean(count_labels_dict, export=False):
@@ -49,7 +52,7 @@ def print_counter_post_manual_clean(count_labels_dict, export=False):
     cleaned = []
     total = sum(x[1] for x in pre_manual_clean)
     for x in pre_manual_clean:
-        tup = (x[0], x[1],f"{round(100 * x[1] / total, 2)}%")
+        tup = (x[0], x[1], f"{round(100 * x[1] / total, 2)}%")
         cleaned.append(tup)
 
     removed = []
@@ -75,15 +78,25 @@ def print_counter_post_manual_clean(count_labels_dict, export=False):
     print("--------------------------------------")
 
     if export:
-        print_df_clean.to_csv("manual_clean_class_distribution.csv", index=False)
+        print_df_clean.to_csv("manually_cleaned_class_distribution.csv", index=False)
         print_df_removed.to_csv("removed_data_class_distribution.csv", index=False)
 
 
+def load_pre_post_clean():
+    df_pre = pd.read_csv("class_distribution.csv")
+    df_post = pd.read_csv("after_manually_cleaned_distribution.csv")
+
+    df_pre = df_pre[["class", "count"]].rename(columns={"count": "pre_count"})
+    df = df_post.merge(df_pre, on="class", how="left")
+    df["items removed/added"] = df["count"] - df["pre_count"]
+    df = df.drop(columns=["pre_count"])
+    return df
 
 
 if __name__ == '__main__':
     initial_balance_check = False
-    post_manual_clean_check = True
+    post_manual_clean_check = False
+    print_diff = True
 
     if initial_balance_check:
         count_labels_dict = load_balanced_class_check()
@@ -91,4 +104,14 @@ if __name__ == '__main__':
 
     if post_manual_clean_check:
         count_labels_dict = load_balanced_class_check()
-        print_counter_post_manual_clean(count_labels_dict)
+        print_counter(count_labels_dict, title="after_manually_cleaned_distribution")
+
+    if print_diff:
+        df = load_pre_post_clean()
+        print(df)
+        export = False
+        if export:
+            df.to_csv('post_manual_clean_info.csv', index=False)
+            print(">>> successfully exported info about data set post clean")
+
+

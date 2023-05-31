@@ -53,22 +53,22 @@ def load_images_with_erasing(img_path):
     return images
 
 
-def load_images_with_rotation_right(img_path):
+def load_images_with_rotation_right(img_path, rotation):
     """load images with rotation"""
     data_transforms = transforms.Compose([transforms.Resize([64, 64]),
                                           transforms.ToTensor(),
-                                          transforms.RandomRotation(degrees=(15, 45), fill=1),
+                                          transforms.RandomRotation(degrees=rotation, fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
     print(">>> loaded images with random rotation to the right...")
     return images
 
 
-def load_images_with_rotation_left(img_path):
+def load_images_with_rotation_left(img_path, rotation):
     """load images with rotation"""
     data_transforms = transforms.Compose([transforms.Resize([64, 64]),
                                           transforms.ToTensor(),
-                                          transforms.RandomRotation(degrees=(-45, -15), fill=1),
+                                          transforms.RandomRotation(degrees=rotation, fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
     print(">>> loaded images with random rotation to the left...")
@@ -187,8 +187,8 @@ if __name__ == '__main__':
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
-    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders)
-    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders)
+    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders, rotation=(15, 165))
+    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders, rotation=(-165, -15))
     random_gaussian_blur_images = load_images_gaussian_blur(img_path_to_folders)
     random_vertical_flip_images = load_images_vertical_flip(img_path_to_folders)
     random_horizontal_flip_images = load_images_horizontal_flip(img_path_to_folders)
@@ -198,7 +198,15 @@ if __name__ == '__main__':
     # imshow(random_gaussian_blur_images[0][0])
     # imshow(random_rotation_left_images[0][0])
     # imshow(random_rotation_right_images[0][0])
-    # imshow(random_erasing_images[0][0])
+    imshow(original_images[500][0])
+    imshow(random_rotation_right_images[500][0])
+
+    imshow(original_images[760][0])
+    imshow(random_rotation_left_images[760][0])
+
+    imshow(original_images[1010][0])
+    imshow(random_rotation_left_images[1010][0])
+    input()
     # imshow(original_images[0][0])
 
     # filter the labels which can be flipped vertically and horizontally
