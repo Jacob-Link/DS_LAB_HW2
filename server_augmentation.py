@@ -241,10 +241,10 @@ if __name__ == '__main__':
 
     # save all images -- in the train and val folders
     save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "train",
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '5. augmented_split_creation_1000_0p9' / "train",
         train_imgs,
         original_images.classes)
 
     save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "val", val_imgs,
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '5. augmented_split_creation_1000_0p9' / "val", val_imgs,
         original_images.classes)
