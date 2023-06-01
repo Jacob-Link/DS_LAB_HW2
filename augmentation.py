@@ -11,16 +11,6 @@ from torchvision.utils import save_image
 from torch.utils import data
 import secrets
 import random
-import copy
-
-"""
-rotate right
-rotate left 
-flip horizontal 
-flip vertical
-random erase
-gaussian blur
-"""
 
 
 def imshow(inp, title=None):
@@ -204,35 +194,30 @@ if __name__ == '__main__':
     # imshow(random_rotation_left_images[0][0])
     # imshow(random_rotation_right_images[0][0])
 
-    # imshow(original_images[132][0])
-    # imshow(random_horizontal_flip_images[132][0])
-    #
-    # imshow(original_images[523][0])
-    # imshow(random_horizontal_flip_images[523][0])
-    #
-    # imshow(original_images[1800][0])
-    # imshow(random_vertical_flip_images[1800][0])
     # input()
 
     # filter the labels which can be flipped vertically and horizontally
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
                                                         classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
-                                                                         "viii", "ix", "x"],
-                                                        change_class_map={"iv": "vi", "vi": "iv"})
+                                                                         "viii", "ix", "x"])
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
                                                           classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
-                                                                           "viii", "ix", "x"])
+                                                                           "viii", "ix", "x"],
+                                                          change_class_map={"iv": "vi", "vi": "iv"})
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
-    train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
+    split = True
+    if split:
+        train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
 
     # save all images -- in the train and val folders
-    save_imgs = False
+    save_imgs = True
     if save_imgs:
         save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
                                 original_images.classes)
 
         save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs,
                                 original_images.classes)
+
