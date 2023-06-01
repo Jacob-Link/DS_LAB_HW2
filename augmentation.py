@@ -1,5 +1,5 @@
 import random
-
+import pandas as pd
 import torch
 import torchvision
 import numpy as np
@@ -175,10 +175,36 @@ def save_images_from_subset(folder_path, dataset, class_list):
     print(f">>> successfully saved {len(dataset)} images to: {folder_path}")
 
 
+def print_dataset_distribution(dataset, title, index_to_class_map, export=False):
+    count = {k: 0 for k in index_to_class_map.values()}
+    for _, label_index in dataset:
+        count[index_to_class_map[label_index]] += 1
+
+    data = []
+    total_labels = sum(count.values())
+    for key, val in count.items():
+        tup = (key, val, f"{round(100 * val / total_labels, 2)}%")
+        data.append(tup)
+    data.sort(key=lambda x: x[1], reverse=True)
+
+    print_df = pd.DataFrame(data, columns=["class", "count", "%"])
+    print("----------  label balance ----------")
+    print(print_df)
+    print(f"Size of all dataset: {sum(print_df['count']):,}")
+
+    if export:
+        print_df.to_csv(f"{title}.csv", index=False)
+        print(f">>> successfully exported {title}")
+
+    print("------------------------------------")
+    print()
+
+
 if __name__ == '__main__':
     # img_path_to_folders = Path.cwd().parent / 'augmenting_test'
     # img_path_to_folders = Path.cwd().parent / 'data' / 'hw2_094295' / 'data' / 'train'
-    img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
+    # img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
+    img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '2. touched up manual clean' / 'train'
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
@@ -208,16 +234,21 @@ if __name__ == '__main__':
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
+    index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
+
+    print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
+
     split = True
     if split:
-        train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
+        train_imgs, val_imgs = sample_data(all_data, per_class=1000, train_val_split=0.9)
+        print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, True)
+        print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, True)
 
     # save all images -- in the train and val folders
-    save_imgs = True
+    save_imgs = False
     if save_imgs:
         save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
                                 original_images.classes)
 
         save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs,
                                 original_images.classes)
-

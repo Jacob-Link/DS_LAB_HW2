@@ -13,6 +13,7 @@ import secrets
 import random
 import copy
 
+
 def imshow(inp, title=None):
     """Imshow for Tensors."""
     inp = inp.numpy().transpose((1, 2, 0))
@@ -43,22 +44,22 @@ def load_images_with_erasing(img_path):
     return images
 
 
-def load_images_with_rotation_right(img_path):
+def load_images_with_rotation_right(img_path, rotation):
     """load images with rotation"""
     data_transforms = transforms.Compose([transforms.Resize([64, 64]),
                                           transforms.ToTensor(),
-                                          transforms.RandomRotation(degrees=(15, 45), fill=1),
+                                          transforms.RandomRotation(degrees=rotation, fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
     print(">>> loaded images with random rotation to the right...")
     return images
 
 
-def load_images_with_rotation_left(img_path):
+def load_images_with_rotation_left(img_path, rotation):
     """load images with rotation"""
     data_transforms = transforms.Compose([transforms.Resize([64, 64]),
                                           transforms.ToTensor(),
-                                          transforms.RandomRotation(degrees=(-45, -15), fill=1),
+                                          transforms.RandomRotation(degrees=rotation, fill=1),
                                           ])  # randomly chooses a number in the range given, fills the edges white
     images = datasets.ImageFolder(img_path, data_transforms)
     print(">>> loaded images with random rotation to the left...")
@@ -171,13 +172,38 @@ def save_images_from_subset(folder_path, dataset, class_list):
     print(f">>> successfully saved {len(dataset)} images to: {folder_path}")
 
 
+def print_dataset_distribution(dataset, title, index_to_class_map, export=False):
+    count = {k: 0 for k in index_to_class_map.values()}
+    for _, label_index in dataset:
+        count[index_to_class_map[label_index]] += 1
+
+    data = []
+    total_labels = sum(count.values())
+    for key, val in count.items():
+        tup = (key, val, f"{round(100 * val / total_labels, 2)}%")
+        data.append(tup)
+    data.sort(key=lambda x: x[1], reverse=True)
+
+    print_df = pd.DataFrame(data, columns=["class", "count", "%"])
+    print("----------  label balance ----------")
+    print(print_df)
+    print(f"Size of all dataset: {sum(print_df['count']):,}")
+
+    if export:
+        print_df.to_csv(f"{title}.csv", index=False)
+        print(f">>> successfully exported {title}")
+
+    print("------------------------------------")
+    print()
+
+
 if __name__ == '__main__':
-    img_path_to_folders = Path.cwd().parent / 'data' / 'all_train_val_folder' / '3. all manually clean - for augmentation creation'/ 'all manually clean'
+    img_path_to_folders = Path.cwd().parent / 'data' / 'all_train_val_folder' / '3. all manually clean - for augmentation creation' / 'all manually clean'
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
-    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders)
-    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders)
+    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders, rotation=(15, 165))
+    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders, rotation=(-165, -15))
     random_gaussian_blur_images = load_images_gaussian_blur(img_path_to_folders)
     random_vertical_flip_images = load_images_vertical_flip(img_path_to_folders)
     random_horizontal_flip_images = load_images_horizontal_flip(img_path_to_folders)
@@ -192,18 +218,33 @@ if __name__ == '__main__':
 
     # filter the labels which can be flipped vertically and horizontally
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
-                                                        classes_to_keep=["i", "ii", "iii", "x"])
+                                                        classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
+                                                                         "viii", "ix", "x"])
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
-                                                          classes_to_keep=["i", "ii", "iii", "v", "x"])
+                                                          classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
+                                                                           "viii", "ix", "x"],
+                                                          change_class_map={"iv": "vi", "vi": "iv"})
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
     train_imgs, val_imgs = sample_data(all_data, per_class=500, train_val_split=0.8)
 
-    # save all images -- in the train and val folders
-    save_images_from_subset(Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "train", train_imgs,
-                            original_images.classes)
+    index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
 
-    save_images_from_subset(Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "val", val_imgs,
-                            original_images.classes)
+    print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
+
+    # split
+    train_imgs, val_imgs = sample_data(all_data, per_class=1000, train_val_split=0.9)
+    print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, True)
+    print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, True)
+
+    # save all images -- in the train and val folders
+    save_images_from_subset(
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "train",
+        train_imgs,
+        original_images.classes)
+
+    save_images_from_subset(
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '4. augmented_split_creation_500_0p8' / "val", val_imgs,
+        original_images.classes)
