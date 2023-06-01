@@ -198,7 +198,7 @@ def print_dataset_distribution(dataset, title, index_to_class_map, export=False)
 
 
 if __name__ == '__main__':
-    img_path_to_folders = Path.cwd().parent / 'data' / 'all_train_val_folder' / '3. all manually clean - for augmentation creation' / 'all manually clean'
+    img_path_to_folders = Path.cwd().parent / 'data' / 'all_train_val_folder' / '1. all manually clean - for augmentation creation' / 'manually_cleaned_data'
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
