@@ -1,5 +1,5 @@
 import random
-
+import pandas as pd
 import torch
 import torchvision
 import numpy as np
@@ -233,16 +233,14 @@ if __name__ == '__main__':
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
-    train_imgs, val_imgs = sample_data(all_data, per_class=500, train_val_split=0.8)
-
     index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
 
     print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
 
     # split
     train_imgs, val_imgs = sample_data(all_data, per_class=1000, train_val_split=0.9)
-    print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, True)
-    print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, True)
+    print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, False)
+    print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, False)
 
     # save all images -- in the train and val folders
     save_images_from_subset(
