@@ -99,16 +99,21 @@ def load_images_vertical_flip(img_path):
     return images
 
 
-def filter_images_dataset(images, classes_to_keep):
+def filter_images_dataset(images, classes_to_keep, change_class_map={}):
     classes_to_keep = [images.class_to_idx[keep] for keep in classes_to_keep]
+    change_class_map = {images.class_to_idx[k]: images.class_to_idx[v] for k, v in change_class_map.items()}
 
     indices_to_keep = []
-    for i, (_, class_index) in enumerate(images.samples):
+    for i, (img, class_index) in enumerate(images.samples):
         if class_index in classes_to_keep:
             indices_to_keep.append(i)
+            if class_index in change_class_map:  # overwrite the tuple label if in the change label mapping
+                images.samples[i] = (img, change_class_map[class_index])
+
     filtered_dataset = torch.utils.data.Subset(images, indices_to_keep)
 
     return filtered_dataset
+
 
 
 def save_images(save_path, dataset):
