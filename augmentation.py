@@ -108,13 +108,17 @@ def load_images_vertical_flip(img_path):
     return images
 
 
-def filter_images_dataset(images, classes_to_keep):
+def filter_images_dataset(images, classes_to_keep, change_class_map={}):
     classes_to_keep = [images.class_to_idx[keep] for keep in classes_to_keep]
+    change_class_map = {images.class_to_idx[k]: images.class_to_idx[v] for k, v in change_class_map.items()}
 
     indices_to_keep = []
-    for i, (_, class_index) in enumerate(images.samples):
+    for i, (img, class_index) in enumerate(images.samples):
         if class_index in classes_to_keep:
             indices_to_keep.append(i)
+            if class_index in change_class_map:  # overwrite the tuple label if in the change label mapping
+                images.samples[i] = (img, change_class_map[class_index])
+
     filtered_dataset = torch.utils.data.Subset(images, indices_to_keep)
 
     return filtered_dataset
@@ -183,6 +187,7 @@ def save_images_from_subset(folder_path, dataset, class_list):
 
 if __name__ == '__main__':
     # img_path_to_folders = Path.cwd().parent / 'augmenting_test'
+    # img_path_to_folders = Path.cwd().parent / 'data' / 'hw2_094295' / 'data' / 'train'
     img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
 
     original_images = load_images(img_path_to_folders)
@@ -198,22 +203,25 @@ if __name__ == '__main__':
     # imshow(random_gaussian_blur_images[0][0])
     # imshow(random_rotation_left_images[0][0])
     # imshow(random_rotation_right_images[0][0])
-    imshow(original_images[500][0])
-    imshow(random_rotation_right_images[500][0])
 
-    imshow(original_images[760][0])
-    imshow(random_rotation_left_images[760][0])
-
-    imshow(original_images[1010][0])
-    imshow(random_rotation_left_images[1010][0])
-    input()
-    # imshow(original_images[0][0])
+    # imshow(original_images[132][0])
+    # imshow(random_horizontal_flip_images[132][0])
+    #
+    # imshow(original_images[523][0])
+    # imshow(random_horizontal_flip_images[523][0])
+    #
+    # imshow(original_images[1800][0])
+    # imshow(random_vertical_flip_images[1800][0])
+    # input()
 
     # filter the labels which can be flipped vertically and horizontally
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
-                                                        classes_to_keep=["i", "ii", "iii", "x"])
+                                                        classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
+                                                                         "viii", "ix", "x"],
+                                                        change_class_map={"iv": "vi", "vi": "iv"})
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
-                                                          classes_to_keep=["i", "ii", "iii", "v", "x"])
+                                                          classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
+                                                                           "viii", "ix", "x"])
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
@@ -221,8 +229,10 @@ if __name__ == '__main__':
     train_imgs, val_imgs = sample_data(all_data, per_class=10, train_val_split=0.9)
 
     # save all images -- in the train and val folders
-    save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
-                            original_images.classes)
+    save_imgs = False
+    if save_imgs:
+        save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
+                                original_images.classes)
 
-    save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs,
-                            original_images.classes)
+        save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "val", val_imgs,
+                                original_images.classes)
