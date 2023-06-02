@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+from torchvision import transforms, datasets
 
 DATA_PATH = Path.cwd().parent / 'data' / 'hw2_094295' / 'data'
 
@@ -93,6 +94,14 @@ def load_pre_post_clean():
     return df
 
 
+def load_dataset(path):
+    """Loads and transforms the datasets."""
+    data_transforms = transforms.Compose([transforms.Resize([64, 64]), transforms.ToTensor()])
+    images = datasets.ImageFolder(path, data_transforms)
+    print(f">>> loaded images from path: {path}")
+    return images
+
+
 if __name__ == '__main__':
     initial_balance_check = False
     post_manual_clean_check = False
@@ -113,5 +122,3 @@ if __name__ == '__main__':
         if export:
             df.to_csv('post_manual_clean_info.csv', index=False)
             print(">>> successfully exported info about data set post clean")
-
-
