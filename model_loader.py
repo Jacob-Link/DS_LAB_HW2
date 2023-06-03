@@ -6,9 +6,8 @@ from torchvision import models
 import numpy as np
 
 BATCH_SIZE = 16
-DATA_PATH = Path.cwd().parent / 'online data' / 'test-data-challenge' / 'val'
-# DATA_PATH = Path.cwd()/ 'val_error_analysis'/ 'val'
-MODEL_PATH = Path.cwd().parent / 'models' / "trained_model_8850_0p9_limit_rotation.pt"
+DATA_PATH = Path.cwd().parent / 'error_analysis' / 'attempt_4' / 'val'
+MODEL_PATH = Path.cwd().parent / 'models' / "final_model.pt"
 
 
 def init_loader(data):
@@ -59,15 +58,15 @@ def predict_data(model, data_loader, device, criterion):
     return running_corrects, missed
 
 
-def get_missed_labels():
-    test_data = load_dataset(DATA_PATH)
+def get_missed_labels(data_path, model_path):
+    test_data = load_dataset(data_path)
     print(f"Dataset size: {len(test_data)} images")
     test_dataloader = init_loader(test_data)
     NUM_CLASSES = len(test_data.classes)
     model_ft = models.resnet50(pretrained=False)
     num_ftrs = model_ft.fc.in_features
     model_ft.fc = nn.Linear(num_ftrs, NUM_CLASSES)
-    model = load_state_dict(model_ft, MODEL_PATH)
+    model = load_state_dict(model_ft, model_path)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     loss_function = nn.CrossEntropyLoss()
     correct, missed = predict_data(model, test_dataloader, device, loss_function)
@@ -77,7 +76,6 @@ def get_missed_labels():
 
 
 if __name__ == '__main__':
-    # data_path = Path.cwd().parent / 'online data' / 'test-data-challenge' / 'val'
     # model_path = Path.cwd().parent / 'models' / 'trained_model_1.pt'
     # model_path = Path.cwd().parent / 'models' / 'trained_model_2.pt'
     # model_path = Path.cwd().parent / 'models' / "trained_model_10k_black.pt"

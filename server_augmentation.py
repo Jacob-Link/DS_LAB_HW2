@@ -257,11 +257,11 @@ if __name__ == '__main__':
     index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
 
     print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
-
+    print_dataset_distribution(all_data_except_erased, "all_data_without_erasing_augmentation", index_to_class_map, False)
     # split
     per_class_input = int(input("please input the number of items you would like per class: "))
     split_ratio = float(input("input split ratio (example: 0.9): "))
-    train_imgs, val_imgs = sample_data(all_data_except_erased, per_class=800, train_val_split=0.9)
+    train_imgs, val_imgs = sample_data(all_data_except_erased, per_class=per_class_input, train_val_split=split_ratio)
 
     sample_100_erased_from_each_class = sample_100_erased(random_erasing_images)  # insight from error analysis
     train_imgs = train_imgs + sample_100_erased_from_each_class
@@ -269,13 +269,15 @@ if __name__ == '__main__':
     print_dataset_distribution(train_imgs, f"train_{per_class_input}_data_augmented", index_to_class_map, False)
     print_dataset_distribution(val_imgs, f"test_{per_class_input}_data_augmented", index_to_class_map, False)
 
-    # save all images -- in the train and val folders
-    save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "train",
-        train_imgs,
-        original_images.classes)
+    save_imgs = False
+    if save_imgs:
+        # save all images -- in the train and val folders
+        save_images_from_subset(
+            Path.cwd().parent / 'data' / 'all_train_val_folder' / '10. final_data_create' / "train",
+            train_imgs,
+            original_images.classes)
 
-    save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "val",
-        val_imgs,
-        original_images.classes)
+        save_images_from_subset(
+            Path.cwd().parent / 'data' / 'all_train_val_folder' / '10. final_data_create' / "val",
+            val_imgs,
+            original_images.classes)

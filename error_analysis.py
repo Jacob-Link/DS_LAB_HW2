@@ -96,7 +96,10 @@ def update_labels_to_numerals(res_list, mapping):
 
 
 if __name__ == '__main__':
-    missed, index_to_class_map = get_missed_labels()
+    val_data_path = Path.cwd().parent / 'error_analysis' / 'attempt_4' / 'val'
+    model_path = Path.cwd().parent / 'models' / "attempt_4_model.pt"
+
+    missed, index_to_class_map = get_missed_labels(val_data_path, model_path)
     res_list = extract_data_from_missed(missed)
     update_labels_to_numerals(res_list, index_to_class_map)
 
@@ -105,5 +108,4 @@ if __name__ == '__main__':
     if print_dist:
         print_distribution_of_errors_by_class(res_list, list(index_to_class_map.values()), True)
     if export_excel:
-        # create_excel_sheet_with_error_info(res_list, "attempt_4_val_error_analysis")
-        create_excel_sheet_with_error_info(res_list, "challenge_error_analysis")
+        create_excel_sheet_with_error_info(res_list, "attempt_4_val_error_analysis")

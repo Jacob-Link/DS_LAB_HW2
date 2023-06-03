@@ -2,8 +2,8 @@ from pathlib import Path
 from augmentation import load_images, load_images_gaussian_blur, load_images_with_rotation_left, \
     load_images_with_rotation_right, save_images_from_subset
 
-PATH_TO_TRAIN_TARGET = Path.cwd().parent / "train"
-PATH_TO_HAND_WRITTEN = Path.cwd().parent / "hand_drawn"
+PATH_TO_TRAIN_TARGET = Path.cwd().parent / "data" / "all_train_val_folder" / "10. final_data_create" / "train"
+PATH_TO_HAND_WRITTEN = Path.cwd().parent / "data" / "handwritten"
 
 if __name__ == '__main__':
     # augments the images in the hand drawn and saves 5x the amount with simple augmentations
