@@ -1,2 +1,0 @@
->>> 13 epochs in 30 min, Train accuracy: 0.9598, Val accuracy: 0.8
->>> manual cleaning - relabeling and removing all the noisy data
