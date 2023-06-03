@@ -7,6 +7,7 @@ import numpy as np
 
 BATCH_SIZE = 16
 DATA_PATH = Path.cwd().parent / 'online data' / 'test-data-challenge' / 'val'
+# DATA_PATH = Path.cwd()/ 'val_error_analysis'/ 'val'
 MODEL_PATH = Path.cwd().parent / 'models' / "trained_model_8850_0p9_limit_rotation.pt"
 
 
@@ -31,6 +32,7 @@ def print_stats(correct, data_size):
 def predict_data(model, data_loader, device, criterion):
     print("predicting test set...")
     running_corrects = 0
+    running_incorrects = 0
     model.eval()
     with torch.no_grad():
         missed = dict()  # log all missed classified images for error analysis
@@ -44,18 +46,22 @@ def predict_data(model, data_loader, device, criterion):
             single_losses = np.array([criterion(outputs[i], classes[i]) for i in range(len(preds))])
 
             diff = torch.argwhere(preds != classes)
+            running_incorrects += len(diff)
+
             if len(diff) != 0:
                 missed[f'batch_{i}'] = {"img": inputs[diff], "gt": classes[diff], "pred": preds[diff],
                                         "losses": single_losses[diff]}
             else:
                 missed[f'batch_{i}'] = "predicted all correctly"
 
-    print(">>> finished predicting on test set!")
+
+    print(f">>> finished predicting on test set! (correct: {running_corrects}, incorrect: {running_incorrects})")
     return running_corrects, missed
 
 
 def get_missed_labels():
     test_data = load_dataset(DATA_PATH)
+    print(f"Dataset size: {len(test_data)} images")
     test_dataloader = init_loader(test_data)
     NUM_CLASSES = len(test_data.classes)
     model_ft = models.resnet50(pretrained=False)
@@ -64,8 +70,10 @@ def get_missed_labels():
     model = load_state_dict(model_ft, MODEL_PATH)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     loss_function = nn.CrossEntropyLoss()
-    _, missed = predict_data(model, test_dataloader, device, loss_function)
-    return missed
+    correct, missed = predict_data(model, test_dataloader, device, loss_function)
+    print_stats(correct, len(test_data))
+    index_to_class_map = {test_data.class_to_idx[label]: label for label in test_data.classes}
+    return missed, index_to_class_map
 
 
 if __name__ == '__main__':

@@ -200,11 +200,32 @@ def print_dataset_distribution(dataset, title, index_to_class_map, export=False)
     print()
 
 
+def sample_100_erased(random_erasing_images, per_class=100):
+    index_dict = dict()
+    for i, (_, class_index) in enumerate(random_erasing_images):
+        if class_index in index_dict:
+            index_dict[class_index].append(i)
+        else:
+            index_dict[class_index] = [i]
+
+    sampled_index = []
+
+    for label in index_dict:
+        index_label_list = index_dict[label]
+        per_class_indices = random.sample(index_label_list, k=per_class)
+
+        sampled_index += per_class_indices
+
+    return_sampled = torch.utils.data.Subset(random_erasing_images, sampled_index)
+    print(f">>> sampled {per_class} images per class from the erased augmentation")
+    return return_sampled
+
+
 if __name__ == '__main__':
     # img_path_to_folders = Path.cwd().parent / 'augmenting_test'
     # img_path_to_folders = Path.cwd().parent / 'data' / 'hw2_094295' / 'data' / 'train'
     # img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '1. manual_clean_remove_noise_fix_incorrectly_labelled' / 'train'
-    img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '2. touched up manual clean' / 'train'
+    img_path_to_folders = Path.cwd().parent / 'new_train_folders' / '2. touched up manual clean' / 'manually_cleaned_data'
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
@@ -234,18 +255,25 @@ if __name__ == '__main__':
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
+    all_data_except_erased = original_images + random_rotation_right_images + random_rotation_left_images \
+                             + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
+
     index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
 
     print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
 
     split = True
     if split:
-        train_imgs, val_imgs = sample_data(all_data, per_class=1000, train_val_split=0.9)
-        print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, True)
-        print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, True)
+        train_imgs, val_imgs = sample_data(all_data_except_erased, per_class=800, train_val_split=0.9)
+
+        sample_100_erased_from_each_class = sample_100_erased(random_erasing_images)  # insight from error analysis
+
+        train_imgs = train_imgs + sample_100_erased_from_each_class
+        print_dataset_distribution(train_imgs, f"train_{len(train_imgs)}_data_augmented", index_to_class_map, True)
+        print_dataset_distribution(val_imgs, f"test_{len(val_imgs)}_data_augmented", index_to_class_map, True)
 
     # save all images -- in the train and val folders
-    save_imgs = False
+    save_imgs = True
     if save_imgs:
         save_images_from_subset(Path.cwd().parent / "new_train_folders" / "augmented_results" / "train", train_imgs,
                                 original_images.classes)
