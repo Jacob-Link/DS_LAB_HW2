@@ -115,7 +115,6 @@ def filter_images_dataset(images, classes_to_keep, change_class_map={}):
     return filtered_dataset
 
 
-
 def save_images(save_path, dataset):
     os.makedirs(save_path, exist_ok=True)
 
@@ -202,6 +201,27 @@ def print_dataset_distribution(dataset, title, index_to_class_map, export=False)
     print()
 
 
+def sample_100_erased(random_erasing_images, per_class=100):
+    index_dict = dict()
+    for i, (_, class_index) in enumerate(random_erasing_images):
+        if class_index in index_dict:
+            index_dict[class_index].append(i)
+        else:
+            index_dict[class_index] = [i]
+
+    sampled_index = []
+
+    for label in index_dict:
+        index_label_list = index_dict[label]
+        per_class_indices = random.sample(index_label_list, k=per_class)
+
+        sampled_index += per_class_indices
+
+    return_sampled = torch.utils.data.Subset(random_erasing_images, sampled_index)
+    print(f">>> sampled {per_class} images per class from the erased augmentation")
+    return return_sampled
+
+
 if __name__ == '__main__':
     img_path_to_folders = Path.cwd().parent / 'data' / 'all_train_val_folder' / '1. all manually clean - for augmentation creation' / 'manually_cleaned_data'
 
@@ -225,11 +245,14 @@ if __name__ == '__main__':
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
                                                         classes_to_keep=["i", "ii", "iii", "ix", "x"])
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
-                                                          classes_to_keep=["i", "ii", "iii", "iv","v", "vi", "x"],
+                                                          classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "x"],
                                                           change_class_map={"iv": "vi", "vi": "iv"})
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
                + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
+
+    all_data_except_erased = original_images + random_rotation_right_images + random_rotation_left_images \
+                             + random_gaussian_blur_images + random_horizontal_flip_images + random_vertical_flip_images
 
     index_to_class_map = {original_images.class_to_idx[label]: label for label in original_images.classes}
 
@@ -238,7 +261,11 @@ if __name__ == '__main__':
     # split
     per_class_input = int(input("please input the number of items you would like per class: "))
     split_ratio = float(input("input split ratio (example: 0.9): "))
-    train_imgs, val_imgs = sample_data(all_data, per_class=per_class_input, train_val_split=split_ratio)
+    train_imgs, val_imgs = sample_data(all_data_except_erased, per_class=800, train_val_split=0.9)
+
+    sample_100_erased_from_each_class = sample_100_erased(random_erasing_images)  # insight from error analysis
+    train_imgs = train_imgs + sample_100_erased_from_each_class
+
     print_dataset_distribution(train_imgs, f"train_{per_class_input}_data_augmented", index_to_class_map, False)
     print_dataset_distribution(val_imgs, f"test_{per_class_input}_data_augmented", index_to_class_map, False)
 
@@ -249,5 +276,6 @@ if __name__ == '__main__':
         original_images.classes)
 
     save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "val", val_imgs,
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "val",
+        val_imgs,
         original_images.classes)
