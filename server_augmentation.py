@@ -36,7 +36,7 @@ def load_images_with_erasing(img_path):
     """load images with erasing a random portion, used to achieve the same result as the dropout technique"""
     data_transforms = transforms.Compose([transforms.Resize([64, 64]),
                                           transforms.ToTensor(),
-                                          transforms.RandomErasing(p=1, scale=(0.08, 0.12), value=0),
+                                          transforms.RandomErasing(p=1, scale=(0.08, 0.12), value=1),
                                           ])  # with prob p erase a portion == scale, and fill with black (0) white(1)
 
     images = datasets.ImageFolder(img_path, data_transforms)
@@ -207,8 +207,8 @@ if __name__ == '__main__':
 
     original_images = load_images(img_path_to_folders)
     random_erasing_images = load_images_with_erasing(img_path_to_folders)
-    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders, rotation=(15, 165))
-    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders, rotation=(-165, -15))
+    random_rotation_right_images = load_images_with_rotation_right(img_path_to_folders, rotation=(15, 60))
+    random_rotation_left_images = load_images_with_rotation_left(img_path_to_folders, rotation=(-60, -15))
     random_gaussian_blur_images = load_images_gaussian_blur(img_path_to_folders)
     random_vertical_flip_images = load_images_vertical_flip(img_path_to_folders)
     random_horizontal_flip_images = load_images_horizontal_flip(img_path_to_folders)
@@ -223,11 +223,9 @@ if __name__ == '__main__':
 
     # filter the labels which can be flipped vertically and horizontally
     random_vertical_flip_images = filter_images_dataset(random_vertical_flip_images,
-                                                        classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
-                                                                         "viii", "ix", "x"])
+                                                        classes_to_keep=["i", "ii", "iii", "ix", "x"])
     random_horizontal_flip_images = filter_images_dataset(random_horizontal_flip_images,
-                                                          classes_to_keep=["i", "ii", "iii", "iv", "v", "vi", "vii",
-                                                                           "viii", "ix", "x"],
+                                                          classes_to_keep=["i", "ii", "iii", "iv","v", "vi", "x"],
                                                           change_class_map={"iv": "vi", "vi": "iv"})
 
     all_data = original_images + random_erasing_images + random_rotation_right_images + random_rotation_left_images \
@@ -238,16 +236,18 @@ if __name__ == '__main__':
     print_dataset_distribution(all_data, "all_data_augmented", index_to_class_map, False)
 
     # split
-    train_imgs, val_imgs = sample_data(all_data, per_class=1000, train_val_split=0.9)
-    print_dataset_distribution(train_imgs, "train_9000_data_augmented", index_to_class_map, False)
-    print_dataset_distribution(val_imgs, "test_1000_data_augmented", index_to_class_map, False)
+    per_class_input = int(input("please input the number of items you would like per class: "))
+    split_ratio = float(input("input split ratio (example: 0.9): "))
+    train_imgs, val_imgs = sample_data(all_data, per_class=per_class_input, train_val_split=split_ratio)
+    print_dataset_distribution(train_imgs, f"train_{per_class_input}_data_augmented", index_to_class_map, False)
+    print_dataset_distribution(val_imgs, f"test_{per_class_input}_data_augmented", index_to_class_map, False)
 
     # save all images -- in the train and val folders
     save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '5. augmented_split_creation_1000_0p9' / "train",
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "train",
         train_imgs,
         original_images.classes)
 
     save_images_from_subset(
-        Path.cwd().parent / 'data' / 'all_train_val_folder' / '5. augmented_split_creation_1000_0p9' / "val", val_imgs,
+        Path.cwd().parent / 'data' / 'all_train_val_folder' / '9. augmented_clean_smaller_rotation_black_fill' / "val", val_imgs,
         original_images.classes)
