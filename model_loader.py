@@ -53,9 +53,43 @@ def predict_data(model, data_loader, device, criterion):
             else:
                 missed[f'batch_{i}'] = "predicted all correctly"
 
-
     print(f">>> finished predicting on test set! (correct: {running_corrects}, incorrect: {running_incorrects})")
     return running_corrects, missed
+
+
+def predict_data_extract_images(model, data_loader, device, criterion):
+    print("predicting test set...")
+    running_corrects = 0
+    running_incorrects = 0
+    model.eval()
+    with torch.no_grad():
+        missed_pred_imgs = dict()  # log all missed classified images for error analysis
+        correct_pred_imgs = dict()
+        for i, (inputs, classes) in enumerate(data_loader):
+            inputs = inputs.to(device)
+            classes = classes.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+
+            diff_missed = torch.argwhere(preds != classes)
+            running_incorrects += len(diff_missed)
+
+            if len(diff_missed) != 0:
+                missed_pred_imgs[f'batch_{i}'] = {"img": inputs[diff_missed], "gt": classes[diff_missed], "pred": preds[diff_missed]}
+            else:
+                missed_pred_imgs[f'batch_{i}'] = "predicted all correctly"
+
+            correct_in_batch = torch.argwhere(preds == classes)
+            running_corrects += len(correct_in_batch)
+            if len(correct_in_batch) != 0:
+                correct_pred_imgs[f'batch_{i}'] = {"img": inputs[correct_in_batch], "gt": classes[correct_in_batch],
+                                                  "pred": preds[correct_in_batch]}
+            else:
+                correct_pred_imgs[f'batch_{i}'] = "predicted all incorrectly"
+
+
+    print(f">>> finished predicting on test set! (correct: {running_corrects}, incorrect: {running_incorrects})")
+    return correct_pred_imgs, missed_pred_imgs
 
 
 def get_missed_labels(data_path, model_path):
@@ -73,6 +107,22 @@ def get_missed_labels(data_path, model_path):
     print_stats(correct, len(test_data))
     index_to_class_map = {test_data.class_to_idx[label]: label for label in test_data.classes}
     return missed, index_to_class_map
+
+
+def get_correct_and_missed_labels(data_path, model_path):
+    test_data = load_dataset(data_path)
+    print(f"Dataset size: {len(test_data)} images")
+    test_dataloader = init_loader(test_data)
+    NUM_CLASSES = len(test_data.classes)
+    model_ft = models.resnet50(pretrained=False)
+    num_ftrs = model_ft.fc.in_features
+    model_ft.fc = nn.Linear(num_ftrs, NUM_CLASSES)
+    model = load_state_dict(model_ft, model_path)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    loss_function = nn.CrossEntropyLoss()
+    correct_predictions, missed_predictions = predict_data_extract_images(model, test_dataloader, device, loss_function)
+    index_to_class_map = {test_data.class_to_idx[label]: label for label in test_data.classes}
+    return correct_predictions, missed_predictions, index_to_class_map
 
 
 if __name__ == '__main__':
